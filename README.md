@@ -83,9 +83,21 @@ $ echo $?
 ```
 
 Every ID maps to a cause and a fix in
-[references/checks.md](references/checks.md). Disagree honestly with a
-`skip <ID> [path]` line in `.icmlint` — a recorded exception a reviewer can
-see.
+[references/checks.md](references/checks.md). Apply the seven fixes it names
+(a LOG.md, a `.gitignore` line, the four contract sections, one repaired
+link) and run again:
+
+```
+$ python3 tools/icm-lint .
+icm-lint: 0 finding(s) (0 errors, 0 warnings)
+$ echo $?
+0
+```
+
+That exit code is the whole product: CI blocks on it, pre-commit blocks on
+it, and a green run means the structure is telling the truth. Disagree with
+a finding honestly via a `skip <ID> [path]` line in `.icmlint` — a recorded
+exception a reviewer can see.
 
 ## Layout
 
