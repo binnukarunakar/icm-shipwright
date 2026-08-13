@@ -1,0 +1,34 @@
+# ci.icm.yml — copy to .github/workflows/icm.yml
+# Three jobs: the lint gate, your acceptance commands, and the export re-check.
+name: icm
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.x" }
+      - run: python3 tools/icm-lint . --strict
+
+  # ac:                                # uncomment and set your AC command set
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: npm ci && npm run typecheck && npm test && npm run build
+
+  publish-dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: export + re-check (nothing is pushed)
+        run: |
+          if [ -f publish.manifest ]; then
+            bash tools/icm-export.sh . && bash tools/icm-export.sh . --check
+          else
+            echo "no publish.manifest — rung 5 not reached, skipping"
+          fi
+
+# Rung 6 (optional): require QA trailers on code commits in the push range —
+#   git log --format='%h %B' origin/main..HEAD -- src/ | grep -q '\[QA: pass' \
+#     || { echo 'code commit without [QA: pass] trailer'; exit 1; }

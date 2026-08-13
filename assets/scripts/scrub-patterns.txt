@@ -1,0 +1,13 @@
+# scrub-patterns.txt — one home per secret shape. icm-lint (T2) and
+# icm-export.sh (guardrail B) both read this file; add a shape here and every
+# workspace is covered. Secrets only — PII shapes (phones, consumer emails)
+# live in the export script: a phone number in an internal file is not an
+# error; in a shipped file it is. Orgs: run gitleaks in CI too (rung 6).
+# Format: label<TAB>extended-regex
+google-api	AIza[0-9A-Za-z_\-]{20,}
+openai-key	\bsk-[A-Za-z0-9_\-]{16,}
+github-tok	\bgh[pousr]_[A-Za-z0-9]{16,}
+aws-key	\bAKIA[0-9A-Z]{16}\b
+slack-tok	\bxox[baprs]-[0-9A-Za-z\-]{10,}
+private-key	-----BEGIN [A-Z ]*PRIVATE KEY-----
+jwt	\beyJ[A-Za-z0-9_\-]{10,}\.eyJ[A-Za-z0-9_\-]{10,}

@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""icm-scope — turn a workspace's refuse blocks into harness deny rules.
+
+The ONLY harness-coupled artifact in icm-shipwright: it emits Claude Code
+`permissions.deny` entries so a refused read fails at the harness as a
+permission error, not at the model's discretion. Other harnesses: feed the
+same list into your own permission config.
+
+Reads the entry file's '## Identities REFUSED' paths and detects _private/.
+Usage: icm-scope [WORKSPACE] [--write | --check]
+  default  print the JSON fragment to merge into .claude/settings.local.json
+  --write  merge it in place (additive: preserves unknown keys, unions deny)
+  --check  exit 1 if the settings file is missing any expected deny rule —
+           the machine check behind "regenerate after editing refuse blocks"
+"""
+import json, os, re, sys
+from pathlib import Path
+
+def main():
+    args = [a for a in sys.argv[1:] if a not in ("--write", "--check")]
+    write, check = "--write" in sys.argv, "--check" in sys.argv
+    ws = Path(args[0] if args else ".").resolve()
+    entry = next((ws / n for n in ("CLAUDE.md", "AGENTS.md") if (ws / n).exists()), None)
+    if entry is None:
+        print(f"icm-scope: no entry file in {ws}", file=sys.stderr); sys.exit(2)
+
+    text = re.sub(r"<!--.*?-->", "", entry.read_text(errors="replace"), flags=re.S)
+    m = re.search(r"^##\s+Identities REFUSED\s*$(.*?)(?=^##\s|\Z)", text, re.M | re.S)
+    refused = [p for line in (m.group(1).splitlines() if m else [])
+               if line.strip().startswith("-")
+               for p in re.findall(r"[\w~$./\-]+\.md", line)]
+    def rule(p):  # keep ~/ rules home-relative — stripping ~/ would deny the wrong file
+        return f"Read({p})" if p.startswith("~/") else "Read(./" + re.sub(r"^(?:\./|/)+", "", p) + ")"
+    deny = sorted({rule(p) for p in refused if p}
+                  | ({"Read(./_private/**)"} if (ws / "_private").exists() else set()))
+    if not deny:
+        print("icm-scope: nothing to do — no '## Identities REFUSED' block and no _private/")
+        sys.exit(1)
+
+    cfg_path = ws / ".claude" / "settings.local.json"
+    if check:
+        have = set()
+        if cfg_path.exists():
+            try:
+                have = set(json.loads(cfg_path.read_text()).get("permissions", {}).get("deny", []))
+            except Exception:
+                pass
+        missing = sorted(set(deny) - have)
+        if missing:
+            print("icm-scope --check: deny rules out of date — missing: " + ", ".join(missing))
+            sys.exit(1)
+        print("icm-scope --check: harness deny rules up to date")
+        return
+
+    marker = "icm-scope — regenerate after editing refuse blocks; do not hand-edit"
+    if not write:
+        print(json.dumps({"permissions": {"deny": deny}, "_generated_by": marker}, indent=2))
+        print(f"\nMerge into {ws}/.claude/settings.local.json (or run with --write).", file=sys.stderr)
+        return
+    cfg = json.loads(cfg_path.read_text()) if cfg_path.exists() else {}
+    if not isinstance(cfg, dict) or not isinstance(cfg.get("permissions", {}), dict):
+        print(f"icm-scope: {cfg_path} is not the expected shape — fix it by hand; refusing to overwrite", file=sys.stderr)
+        sys.exit(2)
+    perms = cfg.setdefault("permissions", {})
+    before = set(perms.get("deny", []))
+    perms["deny"] = sorted(before | set(deny))
+    cfg["_generated_by"] = marker
+    cfg_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = cfg_path.with_name(cfg_path.name + ".tmp")
+    tmp.write_text(json.dumps(cfg, indent=2) + "\n")
+    os.replace(tmp, cfg_path)
+    added = sorted(set(deny) - before)
+    print(f"icm-scope: {cfg_path} — added {len(added)} deny rule(s)"
+          + (": " + ", ".join(added) if added else " (already present)"))
+
+if __name__ == "__main__":
+    main()

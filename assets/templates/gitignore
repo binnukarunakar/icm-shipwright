@@ -1,0 +1,9 @@
+# copy to the workspace root as .gitignore — BEFORE the first lint (T1) or commit
+_private/
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+coverage/
+.DS_Store

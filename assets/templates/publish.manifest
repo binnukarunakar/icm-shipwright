@@ -1,0 +1,16 @@
+# publish.manifest — the whitelist IS the structure contract: a listed item
+# that is missing on disk hard-fails the export (and lint O1 catches it early).
+# List only paths that exist NOW; add rows as features land.
+# Paths are mirrored as-is into the export (no renames) — write your public
+# README against the mirrored layout. Never whitelist a dir that contains an
+# entry file (CLAUDE.md/AGENTS.md): whitelist its code subtrees instead.
+# Grammar, one directive per line:
+#   target /tmp/{{name}}-export  # absolute; keeps a persistent .git → continuous public history
+#   dir src                      # shipped whole (standard excludes applied)
+#   file package.json            # shipped exactly
+#   optional CHANGELOG.md        # shipped if present, no failure if absent
+#   never RESEARCH.md            # extra internal name (or path) the guardrails must not find
+#   allow-ref CLAUDE.md          # recorded exception: this built-in name MAY be
+#                                # mentioned in shipped content (guardrail C)
+readme README.public.md          # hand-kept public README, copied to README.md —
+                                 # the internal README can never ship

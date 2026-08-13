@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use icm-shipwright, cite it as below — and cite the ICM paper for the method."
+title: "icm-shipwright: the production layer for ICM workspaces"
+type: software
+authors:
+  - family-names: Karunakar
+    given-names: Binnu
+repository-code: "https://github.com/binnukarunakar/icm-shipwright"
+license: MIT
+version: 0.1.0
+date-released: 2026-08-12
+references:
+  - type: article
+    title: "Interpretable Context Methodology: Folder Structure as Agent Architecture"
+    authors:
+      - family-names: Van Clief
+      - family-names: McDermott
+    url: "https://arxiv.org/abs/2603.16021"
+  - type: software
+    title: "icm-architect"
+    authors:
+      - name: RinDig
+    repository-code: "https://github.com/RinDig/icm-architect"
