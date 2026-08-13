@@ -64,7 +64,9 @@ Everything grows along a pain-triggered ladder — never speculatively:
 
 ## What the lint says
 
-Real output against a workspace that skipped its contracts:
+Real output against a **deliberately broken demo workspace** (not this repo —
+the badge above is this repo's actual state). This is what a stranger's messy
+folder looks like to the lint:
 
 ```
 $ python3 tools/icm-lint .
